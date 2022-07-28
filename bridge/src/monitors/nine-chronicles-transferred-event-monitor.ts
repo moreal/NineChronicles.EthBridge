@@ -2,6 +2,7 @@ import { TriggerableMonitor } from "./triggerable-monitor";
 import { IHeadlessGraphQLClient } from "../interfaces/headless-graphql-client";
 import { NCGTransferredEvent } from "../types/ncg-transferred-event";
 import { TransactionLocation } from "../types/transaction-location";
+import { Integration } from "../integrations";
 
 
 const AUTHORIZED_BLOCK_INTERVAL = 50;
@@ -10,8 +11,8 @@ export class NineChroniclesTransferredEventMonitor extends TriggerableMonitor<NC
     private readonly _headlessGraphQLClient: IHeadlessGraphQLClient;
     private readonly _address: string;
 
-    constructor(latestTransactionLocation: TransactionLocation | null, headlessGraphQLClient: IHeadlessGraphQLClient, address: string) {
-        super(latestTransactionLocation);
+    constructor(latestTransactionLocation: TransactionLocation | null, headlessGraphQLClient: IHeadlessGraphQLClient, address: string, integrations?: Integration[]) {
+        super(latestTransactionLocation, 15 * 1000, integrations=integrations);
 
         this._headlessGraphQLClient = headlessGraphQLClient;
         this._address = address;

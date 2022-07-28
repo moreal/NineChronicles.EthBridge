@@ -2,6 +2,7 @@ import { Monitor } from ".";
 import { captureException } from "@sentry/node";
 import { TransactionLocation } from "../types/transaction-location";
 import { BlockHash } from "../types/block-hash";
+import { Integration } from "../integrations";
 
 function delay(ms: number): Promise<void> {
     return new Promise(resolve => {
@@ -14,15 +15,18 @@ type RemainedEvent<TEventData> = { blockHash: string; events: (TEventData & Tran
 
 export abstract class TriggerableMonitor<TEventData> extends Monitor<TEventData & TransactionLocation> {
     private latestBlockNumber: number | undefined;
+    private updatedAt: Date | undefined;
 
     private readonly _latestTransactionLocation: TransactionLocation | null;
     private readonly _delayMilliseconds: number;
+    private readonly _integrations: Integration[];
 
-    constructor(latestTransactionLocation: TransactionLocation | null, delayMilliseconds: number = 15 * 1000) {
+    constructor(latestTransactionLocation: TransactionLocation | null, delayMilliseconds: number = 15 * 1000, integrations?: Integration[]) {
         super();
 
         this._latestTransactionLocation = latestTransactionLocation;
         this._delayMilliseconds = delayMilliseconds;
+        this._integrations = integrations || [];
     }
 
     async * loop(): AsyncIterableIterator<{ blockHash: BlockHash, events: (TEventData & TransactionLocation)[] }> {
@@ -37,6 +41,8 @@ export abstract class TriggerableMonitor<TEventData> extends Monitor<TEventData 
         } else {
             this.latestBlockNumber = await this.getTipIndex();
         }
+
+        this.updatedAt = new Date();
 
         while(true) {
             try {
@@ -53,8 +59,19 @@ export abstract class TriggerableMonitor<TEventData> extends Monitor<TEventData 
                     }
 
                     this.latestBlockNumber += 1;
+                    this.updatedAt = new Date();
                 } else {
                     this.debug(`Skip check trigger current: ${this.latestBlockNumber} / tip: ${tipIndex}`);
+
+                    const current = new Date();
+                    const TIMEOUT = 5 * 60 * 1000;  // 5 minutes.
+                    if ((+current - +this.updatedAt) > TIMEOUT) {
+                        for (let integration of this._integrations) {
+                            integration.error(`${this.constructor.name} is not updated for ${TIMEOUT / 1000 / 60} minutes.`, {
+                                latestBlockNumber: this.latestBlockNumber,
+                            });
+                        }
+                    }
 
                     await delay(this._delayMilliseconds);
                 }

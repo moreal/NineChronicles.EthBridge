@@ -3,6 +3,7 @@ import { Contract, EventData } from 'web3-eth-contract';
 import { TriggerableMonitor } from "./triggerable-monitor";
 import { ContractDescription } from "../types/contract-description";
 import { TransactionLocation } from "../types/transaction-location";
+import { Integration } from "../integrations";
 
 const BURN_EVENT_NAME = "Burn";
 
@@ -12,8 +13,8 @@ export class EthereumBurnEventMonitor extends TriggerableMonitor<EventData> {
     private readonly _contractDescription: ContractDescription;
     private readonly _confirmations: number;
 
-    constructor(web3: Web3, contractDescription: ContractDescription, latestTransactionLocation: TransactionLocation | null, confirmations: number) {
-        super(latestTransactionLocation);
+    constructor(web3: Web3, contractDescription: ContractDescription, latestTransactionLocation: TransactionLocation | null, confirmations: number, integrations?: Integration[]) {
+        super(latestTransactionLocation, 15 * 1000, integrations);
 
         this._web3 = web3;
         this._contract = new this._web3.eth.Contract(contractDescription.abi, contractDescription.address);

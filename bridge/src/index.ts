@@ -149,7 +149,9 @@ process.on("uncaughtException", console.error);
     ]);
 
     const ethereumBurnEventObserver = new EthereumBurnEventObserver(ncgKmsTransfer, slackWebClient, opensearchClient, monitorStateStore, EXPLORER_ROOT_URL, ETHERSCAN_ROOT_URL, integration);
-    const ethereumBurnEventMonitor = new EthereumBurnEventMonitor(web3, wNCGToken, await monitorStateStore.load("ethereum"), CONFIRMATIONS);
+    const ethereumBurnEventMonitor = new EthereumBurnEventMonitor(web3, wNCGToken, await monitorStateStore.load("ethereum"), CONFIRMATIONS, [
+        integration,
+    ]);
     ethereumBurnEventMonitor.attach(ethereumBurnEventObserver);
 
     const ncgExchangeFeeRatio = new Decimal(0.01);  // 1%
@@ -157,7 +159,9 @@ process.on("uncaughtException", console.error);
         maximum: MAXIMUM_NCG,
         minimum: MINIMUM_NCG,
     }, addressBanPolicy, integration);
-    const nineChroniclesMonitor = new NineChroniclesTransferredEventMonitor(await monitorStateStore.load("nineChronicles"), headlessGraphQLCLient, kmsAddress);
+    const nineChroniclesMonitor = new NineChroniclesTransferredEventMonitor(await monitorStateStore.load("nineChronicles"), headlessGraphQLCLient, kmsAddress, [
+        integration,
+    ]);
     nineChroniclesMonitor.attach(ncgTransferredEventObserver);
 
     ethereumBurnEventMonitor.run();
